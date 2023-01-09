@@ -2,6 +2,7 @@ import { createBoard, playMove, PLAYER1, PLAYER2 } from "./connect4.js";
 
 let last_player = PLAYER2;
 
+// Main loop, triggered on content load...
 window.addEventListener("DOMContentLoaded", () => {
     // Initialize the UI.
     const board = document.querySelector(".board");
@@ -13,6 +14,11 @@ window.addEventListener("DOMContentLoaded", () => {
 
 });
 
+/**
+ * Registers the event listener for player actions.
+ * @param {*} board 
+ * @param {WebSocket} websocket 
+ */
 function sendMoves(board, websocket) {
     // When clicking a column, send a "play" event for a move in that column.
     board.addEventListener("click", ({ target }) => {
@@ -39,6 +45,11 @@ function showMessage(message) {
     window.setTimeout(() => window.alert(message), 50);
 }
 
+/**
+ * Registers the event listener for server messages
+ * @param {*} board 
+ * @param {WebSocket} websocket 
+ */
 function receiveMoves(board, websocket) {
     websocket.addEventListener("message", ({ data }) => {
         const event = JSON.parse(data);

@@ -6,33 +6,7 @@ import websockets
 from connect4 import PLAYER1, PLAYER2
 from connect4 import Connect4
 
-def create_winner(player):
-    print(f"Jogador {player} venceu!")
-    win={
-        "type":"win",
-        "player":player
-    }
-
-    return json.dumps(win)
-
-def create_play(player, col, row):
-    print(f"Jogador {player} jogou na casa ({row},{col})!")
-    play={
-        "type":"play",
-        "player":player,
-        "column":col,
-        "row":row
-    }
-
-    return json.dumps(play)
-
-def create_error(string):
-    error = {
-        "type":"error",
-        "message":string
-    }
-
-    return json.dumps(error)
+from events import create_error, create_play, create_winner
 
 async def handler(websocket):
     game = Connect4()
