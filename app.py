@@ -1,7 +1,5 @@
 #!/usr/bin/env python
 
-import os
-import signal
 import asyncio
 import json
 import websockets
@@ -105,16 +103,9 @@ async def handler(websocket):
 
 
 async def main():
-    #set the stop condition when receiving SIGTERM
-    loop = asyncio.get_running_loop()
-    stop = loop.create_future()
-    loop.add_signal_handler(signal.SIGTERM, stop.set_result, None)
+    async with websockets.serve(handler, "", 8001):
+        await asyncio.Future()  # run forever
 
-    port = int(os.environ.get("PORT","8001"))
-
-    async with websockets.serve(handler, "", port):
-        # await asyncio.Future()  # run forever
-        await stop
 
 if __name__ == "__main__":
     asyncio.run(main())
