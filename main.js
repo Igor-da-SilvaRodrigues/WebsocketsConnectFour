@@ -9,6 +9,7 @@ window.addEventListener("DOMContentLoaded", () => {
     createBoard(board);
 
     const websocket = new WebSocket("ws://localhost:8001/");
+    console.log("Initiating game")
     initGame(websocket);
     receiveMoves(board, websocket);
     sendMoves(board, websocket);
@@ -83,8 +84,21 @@ function receiveMoves(board, websocket) {
  */
 function initGame(websocket) {
     websocket.addEventListener("open", () => {
-      // Send an "init" event for the first player.
-      const event = { type: "init" };
+      // Send an "init" event for the first player. and an "init" event with the correct key for the second player
+      const params = new URLSearchParams(window.location.search);
+      console.log("game initating")
+      let event = {type: "init"};
+      if(params.has("join")){
+        console.log("join found")
+        //second player joins an existing game
+        event.join = params.get("join");
+        console.log("found" + params.get("join"))
+      }else{
+        console.log("join NOT found")
+        console.log("found" + params.get("join"))
+        //first player starts a new game
+      }
+
       websocket.send(JSON.stringify(event));
     });
 }

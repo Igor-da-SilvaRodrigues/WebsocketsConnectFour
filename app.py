@@ -11,6 +11,56 @@ from events import create_error, create_play, create_winner
 
 JOIN = {}
 
+async def play(websocket, game, player, connected):
+
+    async for message in websocket:
+        dict = json.loads(message)
+        if dict['type'] == 'play':
+            #records a play and the landing
+            landing = None
+            try:
+                landing = game.play(player, dict['column'])
+
+                for ws in connected:
+                    await ws.send(create_play(player, dict['column'], landing  ) )
+            except RuntimeError:
+                await websocket.send(create_error(f"Illegal move by player {player} on column {dict['column']}!"))
+            if game.winner != None:
+                for ws in connected:
+                    await ws.send(create_winner(game.winner))
+        else:
+            for ws in connected:
+                ws.send(create_error('Illegal move type!')) 
+
+async def error(websocket, message):
+    event = {
+        "type":"error",
+        "message":message,
+    }
+    await websocket.send(json.dumps(event))
+
+
+async def join(websocket, join_key: str):
+    
+    #Find the connected four game
+    try:
+        game, connected = JOIN[join_key]
+    except KeyError:
+        await error(websocket, "Game not found.")
+        return
+
+    # Register to receive moves from this game.
+    connected.add(websocket)
+    try:
+
+        print("second player joined game", id(game))
+        await play(websocket, game, PLAYER2, connected)
+
+    finally:
+        connected.remove(websocket)
+
+
+
 async def start(websocket):
     # Initialize a Connect Four game, the set of WebSocket connections
     # receiving moves from this game, and secret access token.
@@ -29,10 +79,8 @@ async def start(websocket):
         }
         await websocket.send(json.dumps(event))
 
-        # Temporary - for testing.
         print("first player started game", id(game))
-        async for message in websocket:
-            print("first player sent", message)
+        await play(websocket, game, PLAYER1, connected)
 
     finally:
         print(f"closing game {id(game)} because the last player disconnected.")
@@ -44,28 +92,15 @@ async def handler(websocket):
     event = json.loads(message)
     assert event["type"] == "init"
 
-    # First player starts a new game.
-    await start(websocket)
+    if "join" in event:
+        # second player joins an existing game
+        await join(websocket, event["join"])
+    else:
+        # First player starts a new game.
+        await start(websocket)
 
-""" async def handler(websocket):
-    game = Connect4()
-    async for message in websocket:
-        dict = json.loads(message)
-        if dict['type'] == 'play':
-            
-            
-            #records a play and the landing.
-            landing = None
-            try:
-                landing = game.play(dict['player'],dict['column'])
-                await websocket.send(create_play(dict['player'], dict['column'], landing))
-            except RuntimeError:
-                await websocket.send(create_error(f"Illegal move by player {dict['player']} on column {dict['column']}!"))
-            if game.winner != None:
-                await websocket.send(create_winner(game.winner))
 
-        else:
-            websocket.send(create_error('Illegal move type!')) """
+
 
 async def main():
     async with websockets.serve(handler, "", 8001):
